@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Serilog;
+using System;
 using System.Configuration;
 using System.IO;
 using Topshelf;
@@ -15,6 +16,10 @@ namespace MK6.GameKeeper
 
         static void Main(string[] args)
         {
+            Log.Logger = new LoggerConfiguration()
+                .ReadFrom.AppSettings()
+                .CreateLogger();
+
             HostFactory.Run(config =>
             {
                 config.Service<Service>(
@@ -28,10 +33,10 @@ namespace MK6.GameKeeper
                     },
                     svc =>
                     {
-                        svc.BeforeStartingService(() => Console.WriteLine("Starting service"));
-                        svc.AfterStartingService(() => Console.WriteLine("Service started"));
-                        svc.BeforeStoppingService(() => Console.WriteLine("Stopping service"));
-                        svc.AfterStoppingService(() => Console.WriteLine("Service stopped"));
+                        svc.BeforeStartingService(() => Log.Information("Starting service"));
+                        svc.AfterStartingService(() => Log.Information("Service started"));
+                        svc.BeforeStoppingService(() => Log.Information("Stopping service"));
+                        svc.AfterStoppingService(() => Log.Information("Service stopped"));
                     });
 
                 config.RunAsLocalService();

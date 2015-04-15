@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using Serilog;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -29,7 +30,7 @@ namespace MK6.GameKeeper
             SetupPluginsDirectoryWatcher(pluginsDirectory, plugins);
 
             var watchdogTimer = new Timer(
-                state => CleanupCrashedPlugins(), 
+                CleanupCrashedPlugins, 
                 null, 
                 0, 
                 watchdogIntervalMilliseconds);
@@ -66,6 +67,8 @@ namespace MK6.GameKeeper
         {
             return (sender, e) =>
             {
+                Log.Information("Plugin has been added");
+
                 lock (_pluginListLock)
                 {
                     StartPluginsNotCurrentlyRunning();
@@ -79,6 +82,8 @@ namespace MK6.GameKeeper
         {
             return (sender, e) =>
             {
+                Log.Information("Plugin directory {@AffectedDirectory} has been changed", e.FullPath);
+
                 lock (_pluginListLock)
                 {
                     var affectedDirectory = Directory.Exists(e.FullPath)
@@ -88,6 +93,8 @@ namespace MK6.GameKeeper
                     var affectedPlugins = plugins
                         .Where(p => p.Directory.FullName == affectedDirectory.FullName)
                         .ToList();
+
+                    Log.Debug("Plugins affected by changed {@AffectedPlugins}", affectedPlugins.Select(p => p.Id));
 
                     StopPlugins(affectedPlugins);
                     RemovePluginsThatNoLongerExist();
@@ -100,6 +107,8 @@ namespace MK6.GameKeeper
         {
             return (sender, e) =>
             {
+                Log.Information("Plugin has been deleted");
+
                 lock (_pluginListLock)
                 {
                     RemovePluginsThatNoLongerExist();
@@ -112,8 +121,6 @@ namespace MK6.GameKeeper
             var pluginFoldersNotRunning = pluginsDirectory.EnumerateDirectories()
                 .Where(pluginFolder => !plugins.Any(plugin => plugin.Directory.FullName == pluginFolder.FullName));
 
-            var newPlugins = new List<Plugin>();
-
             foreach (var pluginFolderToAdd in pluginFoldersNotRunning)
             {
                 var pluginExe = pluginFolderToAdd.EnumerateFiles("*.exe").FirstOrDefault();
@@ -123,10 +130,9 @@ namespace MK6.GameKeeper
                     continue;
                 }
 
-                newPlugins.Add(StartPlugin(pluginFolderToAdd));
+                Log.Information("Starting plugin {@PluginName}", pluginFolderToAdd.Name);
+                plugins.Add(StartPlugin(pluginFolderToAdd));
             }
-
-            plugins.AddRange(newPlugins);
         }
 
         private void RemovePluginsThatNoLongerExist()
@@ -135,17 +141,21 @@ namespace MK6.GameKeeper
             StopPlugins(pluginsToRemove);
         }
 
-        private void CleanupCrashedPlugins()
+        private void CleanupCrashedPlugins(object ignoreMe)
         {
+            Log.Debug("Currently running plugins {@PluginNames}", this.plugins.Select(p => p.Id));
+
             for (var pluginIndex = plugins.Count - 1; pluginIndex >= 0; pluginIndex -= 1)
             {
                 var plugin = plugins[pluginIndex];
 
                 if (plugin.Thread.ThreadState != ThreadState.Stopped)
                 {
+                    Log.Verbose("Watchdog found that plugin {@PluginName} is still running", plugin.Id);
                     continue;
                 }
 
+                Log.Error("Watchdog found that the thread for plugin {@PluginName} has stopped", plugin.Id);
                 plugin.Stop();
 
                 plugins.RemoveAt(pluginIndex);
@@ -158,6 +168,7 @@ namespace MK6.GameKeeper
         {
             foreach (var pluginToRemove in pluginsToRemove)
             {
+                Log.Information("Stopping plugin {@PluginName}", pluginToRemove.Id);
                 pluginToRemove.Stop();
                 plugins.Remove(pluginToRemove);
             }

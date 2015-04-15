@@ -22,6 +22,11 @@ namespace MK6.GameKeeper
             this.pluginsDirectory = pluginsDirectory;
             this.watchdogIntervalMilliseconds = watchdogIntervalMilliseconds;
             this.plugins = new List<Plugin>();
+
+            if (!this.pluginsDirectory.Exists)
+            {
+                this.pluginsDirectory.Create();
+            }
         }
 
         public bool Start(HostControl hostControl)

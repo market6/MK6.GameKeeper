@@ -1,4 +1,6 @@
-﻿using Serilog;
+﻿using System;
+using Nancy.Hosting.Self;
+using Serilog;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -17,7 +19,9 @@ namespace MK6.GameKeeper
 
         private readonly List<Plugin> plugins;
 
-        public Service(DirectoryInfo pluginsDirectory, int watchdogIntervalMilliseconds)
+        private readonly NancyHost nancyHost;
+
+        public Service(DirectoryInfo pluginsDirectory, int watchdogIntervalMilliseconds, Uri restUri = null)
         {
             this.pluginsDirectory = pluginsDirectory;
             this.watchdogIntervalMilliseconds = watchdogIntervalMilliseconds;
@@ -27,6 +31,19 @@ namespace MK6.GameKeeper
             {
                 this.pluginsDirectory.Create();
             }
+
+            if (restUri != null)
+            {
+                nancyHost = new NancyHost(
+                    new HostConfiguration
+                    {
+                        UrlReservations = new UrlReservations { CreateAutomatically = true }
+                    }, restUri);
+            }
+            else
+            {
+                Log.Information("Rest API has not been configured");
+            }
         }
 
         public bool Start(HostControl hostControl)
@@ -35,10 +52,16 @@ namespace MK6.GameKeeper
             SetupPluginsDirectoryWatcher(pluginsDirectory, plugins);
 
             var watchdogTimer = new Timer(
-                CleanupCrashedPlugins, 
-                null, 
-                0, 
+                CleanupCrashedPlugins,
+                null,
+                0,
                 watchdogIntervalMilliseconds);
+
+            if (nancyHost != null)
+            {
+                nancyHost.Start();
+                Log.Information("Rest API started");
+            }
 
             return true;
         }
@@ -53,6 +76,11 @@ namespace MK6.GameKeeper
                 }
             }
 
+            if (nancyHost != null)
+            {
+                nancyHost.Stop();
+                Log.Information("Rest API stopped");
+            }
             return true;
         }
 

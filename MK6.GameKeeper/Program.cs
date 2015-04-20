@@ -28,8 +28,9 @@ namespace MK6.GameKeeper
                         var pluginDirectoryName = ConfigurationManager.AppSettings["PluginDirectory"];
                         var watchdogFrequency = int.Parse(ConfigurationManager.AppSettings["WatchdogFrequency"]);
                         var pluginsDirectory = new DirectoryInfo(Path.Combine(Environment.CurrentDirectory, pluginDirectoryName));
-
-                        return new Service(pluginsDirectory, watchdogFrequency);
+                        Uri restUri;
+                        Uri.TryCreate(ConfigurationManager.AppSettings["RestUri"], UriKind.Absolute, out restUri);
+                        return new Service(pluginsDirectory, watchdogFrequency, restUri);
                     },
                     svc =>
                     {

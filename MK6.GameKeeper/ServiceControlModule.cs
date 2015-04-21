@@ -22,6 +22,9 @@ namespace MK6.GameKeeper
     ""Stopped"": 0,
     ""_embedded"": {
         ""Plugins"": [{
+            ""_links"": {
+                ""self"": { ""href"": ""/plugins/MyPlugin"" }
+            },
             ""Name"": ""MyPlugin"",
             ""Path"": ""C:\\gamekeeper\\plugins\\myplugin"",
             ""Status"": ""Running"",

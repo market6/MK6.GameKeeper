@@ -25,12 +25,10 @@ namespace MK6.GameKeeper
                 config.Service<Service>(
                     host =>
                     {
-                        var pluginDirectoryName = ConfigurationManager.AppSettings["PluginDirectory"];
                         var watchdogFrequency = int.Parse(ConfigurationManager.AppSettings["WatchdogFrequency"]);
-                        var pluginsDirectory = new DirectoryInfo(Path.Combine(Environment.CurrentDirectory, pluginDirectoryName));
                         Uri restUri;
                         Uri.TryCreate(ConfigurationManager.AppSettings["RestUri"], UriKind.Absolute, out restUri);
-                        return new Service(pluginsDirectory, watchdogFrequency, restUri);
+                        return new Service(watchdogFrequency, restUri);
                     },
                     svc =>
                     {

@@ -6,7 +6,7 @@ using System.Threading;
 
 namespace MK6.GameKeeper
 {
-    class Plugin : IDisposable
+    public class Plugin : IDisposable
     {
         public readonly string Id;
 

@@ -16,7 +16,7 @@ namespace MK6.GameKeeper
         private static object _pluginListLock = new object();
         private static Lazy<PluginManager> _instance;
         private readonly DirectoryInfo _pluginsDirectory;
-        private readonly List<Plugin> _plugins = new List<Plugin>(); 
+        private readonly List<Plugin> _plugins = new List<Plugin>();
 
         static PluginManager()
         {
@@ -75,6 +75,25 @@ namespace MK6.GameKeeper
                     _plugins.Add(StartPlugin(pluginFolderToAdd));
                 }
             }
+        }
+
+        internal Plugin StartPlugin(string pluginId)
+        {
+            var pluginDir = new DirectoryInfo(Path.Combine(_pluginsDirectory.FullName, pluginId));
+            if (pluginDir.Exists)
+            {
+                lock (_pluginListLock)
+                {
+                    if (_plugins.Any(x => x.Id.Equals(pluginId, StringComparison.OrdinalIgnoreCase)))
+                        return null;
+
+                    var plugin = StartPlugin(pluginDir);
+                    _plugins.Add(plugin);
+                    return plugin;
+                }
+            }
+
+            return null;
         }
 
         internal void RemovePluginsThatNoLongerExist()

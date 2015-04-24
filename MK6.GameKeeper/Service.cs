@@ -44,6 +44,8 @@ namespace MK6.GameKeeper
 
         public bool Stop(HostControl hostControl)
         {
+            watchdog.Change(0, Timeout.Infinite);
+
             lock (_pluginListLock)
             {
                 for (var pluginIndex = 0; pluginIndex < plugins.Count; pluginIndex += 1)

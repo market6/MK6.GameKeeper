@@ -1,4 +1,5 @@
 ﻿using Serilog;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -17,6 +18,8 @@ namespace MK6.GameKeeper
 
         private readonly List<Plugin> plugins;
 
+        private Timer watchdog;
+
         public Service(DirectoryInfo pluginsDirectory, int watchdogIntervalMilliseconds)
         {
             this.pluginsDirectory = pluginsDirectory;
@@ -34,11 +37,7 @@ namespace MK6.GameKeeper
             StartPluginsNotCurrentlyRunning();
             SetupPluginsDirectoryWatcher(pluginsDirectory, plugins);
 
-            var watchdogTimer = new Timer(
-                CleanupCrashedPlugins, 
-                null, 
-                0, 
-                watchdogIntervalMilliseconds);
+            watchdog = SetupWatchdog();
 
             return true;
         }
@@ -54,6 +53,15 @@ namespace MK6.GameKeeper
             }
 
             return true;
+        }
+
+        private Timer SetupWatchdog()
+        {
+            return new Timer(
+                WatchdogCallback,
+                null,
+                0,
+                watchdogIntervalMilliseconds);
         }
 
         private void SetupPluginsDirectoryWatcher(DirectoryInfo pluginsDirectory, List<Plugin> plugins)
@@ -146,27 +154,35 @@ namespace MK6.GameKeeper
             StopPlugins(pluginsToRemove);
         }
 
-        private void CleanupCrashedPlugins(object ignoreMe)
+        private void WatchdogCallback(object ignoreMe)
         {
-            Log.Debug("Currently running plugins {@PluginNames}", this.plugins.Select(p => p.Id));
+            Log.Debug("WATCHDOG - Currently running plugins {@PluginNames}", this.plugins.Select(p => p.Id));
 
-            for (var pluginIndex = plugins.Count - 1; pluginIndex >= 0; pluginIndex -= 1)
+            try
             {
-                var plugin = plugins[pluginIndex];
-
-                if (plugin.Thread.ThreadState != ThreadState.Stopped)
+                for (var pluginIndex = plugins.Count - 1; pluginIndex >= 0; pluginIndex -= 1)
                 {
-                    Log.Verbose("Watchdog found that plugin {@PluginName} is still running", plugin.Id);
-                    continue;
+                    var plugin = plugins[pluginIndex];
+
+                    if (plugin.Thread.ThreadState != ThreadState.Stopped)
+                    {
+                        Log.Verbose("WATCHDOG -  Plugin {@PluginName} is still running", plugin.Id);
+                        continue;
+                    }
+
+                    Log.Error("WATCHDOG - Thread for plugin {@PluginName} has stopped", plugin.Id);
+                    plugin.Stop();
+
+                    plugins.RemoveAt(pluginIndex);
                 }
 
-                Log.Error("Watchdog found that the thread for plugin {@PluginName} has stopped", plugin.Id);
-                plugin.Stop();
-
-                plugins.RemoveAt(pluginIndex);
+                StartPluginsNotCurrentlyRunning();
             }
-
-            StartPluginsNotCurrentlyRunning();
+            catch (Exception ex)
+            {
+                Log.Error(ex, "WATCHDOG dying");
+                watchdog = SetupWatchdog();
+            }
         }
 
         private void StopPlugins(IEnumerable<Plugin> pluginsToRemove)

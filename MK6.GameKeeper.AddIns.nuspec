@@ -1,16 +1,17 @@
 <?xml version="1.0"?>
 <package >
   <metadata>
-    <id>MK6.GameKeeper</id>
+    <id>MK6.GameKeeper.AddIns</id>
     <version>$version$</version>
     <authors>Market6</authors>
     <owners>Market6</owners>
     <requireLicenseAcceptance>true</requireLicenseAcceptance>
     <licenseUrl>http://opensource.org/licenses/MIT</licenseUrl>
-    <description>Windows service to host pluggable services</description>
+    <description>Interfaces for implementing GameKeeper addins</description>
     <copyright>Copyright 2015</copyright>
+    
   </metadata>
   <files>
-    <file src="MK6.GameKeeper\bin\Release\**\*" target="" />
+    <file src="MK6.GameKeeper\bin\Release\Pipeline\AddInViews\MK6.GameKeeper.AddIns.dll" target="lib\net451" />
   </files>
 </package>

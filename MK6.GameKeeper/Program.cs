@@ -25,11 +25,16 @@ namespace MK6.GameKeeper
                 config.Service<Service>(
                     host =>
                     {
-                        var pluginDirectoryName = ConfigurationManager.AppSettings["PluginDirectory"];
-                        var watchdogFrequency = int.Parse(ConfigurationManager.AppSettings["WatchdogFrequency"]);
-                        var pluginsDirectory = new DirectoryInfo(Path.Combine(Environment.CurrentDirectory, pluginDirectoryName));
+                        var pipelinePath = ConfigurationManager.AppSettings["PipelinePath"];
 
-                        return new Service(pluginsDirectory, watchdogFrequency);
+                        if (!Path.IsPathRooted(pipelinePath))
+                        {
+                            pipelinePath = Path.Combine(Environment.CurrentDirectory, pipelinePath);
+                        }
+
+                        var pluginsDirectory = new DirectoryInfo(pipelinePath);
+
+                        return new Service(pluginsDirectory);
                     },
                     svc =>
                     {

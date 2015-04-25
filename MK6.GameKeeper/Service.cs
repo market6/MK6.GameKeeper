@@ -1,209 +1,147 @@
-﻿using Serilog;
-using System;
+﻿using MK6.GameKeeper.AddIns.HostView;
+using Serilog;
+using System.AddIn.Hosting;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Threading;
 using Topshelf;
 
 namespace MK6.GameKeeper
 {
     class Service : ServiceControl
     {
-        private static object _pluginListLock = new object();
+        private static object InstalledAddinsLock = new object();
 
-        private readonly DirectoryInfo pluginsDirectory;
+        private readonly DirectoryInfo pipelineDirectory;
 
-        private readonly int watchdogIntervalMilliseconds;
+        private readonly IDictionary<string, AddIn> installedAddins;
 
-        private readonly List<Plugin> plugins;
-
-        private Timer watchdog;
-
-        public Service(DirectoryInfo pluginsDirectory, int watchdogIntervalMilliseconds)
+        public Service(DirectoryInfo pipelineDirectory)
         {
-            this.pluginsDirectory = pluginsDirectory;
-            this.watchdogIntervalMilliseconds = watchdogIntervalMilliseconds;
-            this.plugins = new List<Plugin>();
+            this.pipelineDirectory = pipelineDirectory;
+            this.installedAddins = new Dictionary<string, AddIn>();
 
-            if (!this.pluginsDirectory.Exists)
-            {
-                this.pluginsDirectory.Create();
-            }
+            AddInStore.Update(this.pipelineDirectory.FullName);
         }
 
         public bool Start(HostControl hostControl)
         {
-            StartPluginsNotCurrentlyRunning();
-            SetupPluginsDirectoryWatcher(pluginsDirectory, plugins);
-
-            watchdog = SetupWatchdog();
+            EnsureHighestVersionAddinsAreInstalled();
+            SetupPluginsDirectoryWatcher();
 
             return true;
         }
 
         public bool Stop(HostControl hostControl)
         {
-            watchdog.Change(0, Timeout.Infinite);
-
-            lock (_pluginListLock)
+            lock (InstalledAddinsLock)
             {
-                for (var pluginIndex = 0; pluginIndex < plugins.Count; pluginIndex += 1)
+                foreach (var addin in this.installedAddins.Values)
                 {
-                    plugins[pluginIndex].Stop();
+                    addin.Dispose();
                 }
             }
 
             return true;
         }
 
-        private Timer SetupWatchdog()
+        private void SetupPluginsDirectoryWatcher()
         {
-            return new Timer(
-                WatchdogCallback,
-                null,
-                0,
-                watchdogIntervalMilliseconds);
-        }
-
-        private void SetupPluginsDirectoryWatcher(DirectoryInfo pluginsDirectory, List<Plugin> plugins)
-        {
-            var watcher = new FileSystemWatcher(pluginsDirectory.FullName);
-            watcher.Created += OnPluginDirectoryAdded(pluginsDirectory, plugins);
-            watcher.Changed += OnPluginDirectoryChanged(pluginsDirectory, plugins);
-            watcher.Deleted += OnPluginDirectoryDeleted(plugins);
+            var watcher = new FileSystemWatcher(GetAddInsFolderPath());
+            watcher.Created += OnAddInFolderAdded;
+            watcher.Deleted += OnAddInFolderDeleted;
             watcher.IncludeSubdirectories = true;
             watcher.EnableRaisingEvents = true;
         }
 
-        private FileSystemEventHandler OnPluginDirectoryAdded(
-            DirectoryInfo pluginsDirectory,
-            List<Plugin> plugins)
+        private void OnAddInFolderAdded(object sender, FileSystemEventArgs e)
         {
-            return (sender, e) =>
+            Log.Information("Plugin has been added");
+
+            lock (InstalledAddinsLock)
             {
-                Log.Information("Plugin has been added");
-
-                lock (_pluginListLock)
-                {
-                    StartPluginsNotCurrentlyRunning();
-                }
-            };
-        }
-
-        private FileSystemEventHandler OnPluginDirectoryChanged(
-            DirectoryInfo pluginsDirectory,
-            List<Plugin> plugins)
-        {
-            return (sender, e) =>
-            {
-                Log.Information("Plugin directory {@AffectedDirectory} has been changed", e.FullPath);
-
-                lock (_pluginListLock)
-                {
-                    var affectedDirectory = Directory.Exists(e.FullPath)
-                        ? new DirectoryInfo(e.FullPath)
-                        : new FileInfo(e.FullPath).Directory;
-
-                    var affectedPlugins = plugins
-                        .Where(p => p.Directory.FullName == affectedDirectory.FullName)
-                        .ToList();
-
-                    Log.Debug("Plugins affected by changed {@AffectedPlugins}", affectedPlugins.Select(p => p.Id));
-
-                    StopPlugins(affectedPlugins);
-                    RemovePluginsThatNoLongerExist();
-                    StartPluginsNotCurrentlyRunning();
-                }
-            };
-        }
-
-        private FileSystemEventHandler OnPluginDirectoryDeleted(List<Plugin> plugins)
-        {
-            return (sender, e) =>
-            {
-                Log.Information("Plugin has been deleted");
-
-                lock (_pluginListLock)
-                {
-                    RemovePluginsThatNoLongerExist();
-                }
-            };
-        }
-
-        private void StartPluginsNotCurrentlyRunning()
-        {
-            var pluginFoldersNotRunning = pluginsDirectory.EnumerateDirectories()
-                .Where(pluginFolder => !plugins.Any(plugin => plugin.Directory.FullName == pluginFolder.FullName));
-
-            foreach (var pluginFolderToAdd in pluginFoldersNotRunning)
-            {
-                var pluginExe = pluginFolderToAdd.EnumerateFiles("*.exe").FirstOrDefault();
-
-                if (pluginExe == null)
-                {
-                    continue;
-                }
-
-                Log.Information("Starting plugin {@PluginName}", pluginFolderToAdd.Name);
-                plugins.Add(StartPlugin(pluginFolderToAdd));
+                EnsureHighestVersionAddinsAreInstalled();
             }
         }
 
-        private void RemovePluginsThatNoLongerExist()
+        private void OnAddInFolderDeleted(object sender, FileSystemEventArgs e)
         {
-            var pluginsToRemove = plugins.Where(plugin => !Directory.Exists(plugin.Directory.FullName)).ToList();
-            StopPlugins(pluginsToRemove);
+            Log.Information("Plugin has been deleted");
+
+            lock (InstalledAddinsLock)
+            {
+                RemoveUninstalledAddins();
+            }
         }
 
-        private void WatchdogCallback(object ignoreMe)
+        private void EnsureHighestVersionAddinsAreInstalled()
         {
-            Log.Debug("WATCHDOG - Currently running plugins {@PluginNames}", this.plugins.Select(p => p.Id));
+            UpdateAddInStore();
+            var addinTokensByName = GetAvailableAddIns().Select(t => new AddIn(t))
+                .GroupBy(a => a.Name);
 
-            try
+            foreach (var addinTokensForName in addinTokensByName)
             {
-                for (var pluginIndex = plugins.Count - 1; pluginIndex >= 0; pluginIndex -= 1)
-                {
-                    var plugin = plugins[pluginIndex];
+                var addinName = addinTokensForName.Key;
+                Log.Verbose("Found {@Name} with versions {@Versions}", addinName, addinTokensForName.Select(t => t.Version));
 
-                    if (plugin.Thread.ThreadState != ThreadState.Stopped)
+                var highestVersionAddin = addinTokensForName.OrderByDescending(t => t.Version).First();
+                var runningAddin = default(AddIn);
+
+                if (installedAddins.TryGetValue(addinName, out runningAddin))
+                {
+                    Log.Verbose("Found running instance of addin {@Name} version {@Version}", runningAddin.Name, runningAddin.Version);
+
+                    if (runningAddin.Version >= highestVersionAddin.Version)
                     {
-                        Log.Verbose("WATCHDOG -  Plugin {@PluginName} is still running", plugin.Id);
+                        Log.Debug("Currently running addin is same as latest");
                         continue;
                     }
 
-                    Log.Error("WATCHDOG - Thread for plugin {@PluginName} has stopped", plugin.Id);
-                    plugin.Stop();
-
-                    plugins.RemoveAt(pluginIndex);
+                    Log.Debug("Stopping running addin {@Name} because a newer version is available", runningAddin.Name);
+                    runningAddin.Dispose();
+                    installedAddins.Remove(addinName);
                 }
 
-                StartPluginsNotCurrentlyRunning();
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "WATCHDOG dying");
-                watchdog = SetupWatchdog();
+                Log.Debug("Starting addin {@Name} version {@Version}", highestVersionAddin.Name, highestVersionAddin.Version);
+                installedAddins.Add(addinName, highestVersionAddin);
+                highestVersionAddin.Start();
             }
         }
 
-        private void StopPlugins(IEnumerable<Plugin> pluginsToRemove)
+        private void RemoveUninstalledAddins()
         {
-            foreach (var pluginToRemove in pluginsToRemove)
+            var addinTokens = GetAvailableAddIns();
+
+            foreach (var addinName in this.installedAddins.Keys.ToList())
             {
-                Log.Information("Stopping plugin {@PluginName}", pluginToRemove.Id);
-                pluginToRemove.Stop();
-                plugins.Remove(pluginToRemove);
+                if (!addinTokens.Any(t => t.Name == addinName))
+                {
+                    var addin = this.installedAddins[addinName];
+                    addin.Stop();
+                    this.installedAddins.Remove(addinName);
+                }
             }
         }
 
-        private Plugin StartPlugin(DirectoryInfo pluginFolder)
+        private void UpdateAddInStore()
         {
-            var plugin = new Plugin(pluginFolder);
+            var warnings = AddInStore.UpdateAddIns(GetAddInsFolderPath());
 
-            plugin.Start();
+            foreach (var warning in warnings)
+            {
+                Log.Error(warning);
+            }
+        }
 
-            return plugin;
+        private string GetAddInsFolderPath()
+        {
+            return Path.Combine(this.pipelineDirectory.FullName, "AddIns");
+        }
+
+        private IEnumerable<AddInToken> GetAvailableAddIns()
+        {
+            return AddInStore.FindAddIns(typeof(GameKeeperAddIn), this.pipelineDirectory.FullName);
         }
     }
 }

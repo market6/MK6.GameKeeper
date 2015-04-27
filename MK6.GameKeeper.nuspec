@@ -12,5 +12,9 @@
   </metadata>
   <files>
     <file src="MK6.GameKeeper\bin\Release\**\*" target="" />
+    <file src="MK6.GameKeeper\bin\Release\Pipeline\AddInSideAdapters\**\*" target="Pipeline\AddInSideAdapters" />
+    <file src="MK6.GameKeeper\bin\Release\Pipeline\AddInViews\**\*" target="Pipeline\AddInViews" />
+    <file src="MK6.GameKeeper\bin\Release\Pipeline\Contracts\**\*" target="Pipeline\Contracts" />
+    <file src="MK6.GameKeeper\bin\Release\Pipeline\HostSideAdapters\**\*" target="Pipeline\HostSideAdapters" />
   </files>
 </package>

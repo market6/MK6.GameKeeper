@@ -31,6 +31,10 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="MK6.GameKeeper.AddIns, Version=1.0.22.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\MK6.GameKeeper.AddIns.1.0.22\lib\net451\MK6.GameKeeper.AddIns.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.AddIn" />
     <Reference Include="System.AddIn.Contract" />
@@ -46,16 +50,14 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\MK6.GameKeeper.AddIns\MK6.GameKeeper.AddIns.csproj">
-      <Project>{fe692892-4849-4762-9ff5-ba356116a287}</Project>
-      <Name>MK6.GameKeeper.AddIns</Name>
-      <Private>False</Private>
-    </ProjectReference>
     <ProjectReference Include="..\MK6.GameKeeper.AddIns.Contracts\MK6.GameKeeper.AddIns.Contracts.csproj">
       <Project>{d5e514a4-3b9c-4c2c-8953-56145adeb6b7}</Project>
       <Name>MK6.GameKeeper.AddIns.Contracts</Name>
       <Private>False</Private>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

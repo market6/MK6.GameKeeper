@@ -7,8 +7,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MK6.GameKeeper", "MK6.GameK
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MK6.GameKeeper.AddIns.Contracts", "MK6.GameKeeper.AddIns.Contracts\MK6.GameKeeper.AddIns.Contracts.csproj", "{D5E514A4-3B9C-4C2C-8953-56145ADEB6B7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MK6.GameKeeper.AddIns", "MK6.GameKeeper.AddIns\MK6.GameKeeper.AddIns.csproj", "{FE692892-4849-4762-9FF5-BA356116A287}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MK6.GameKeeper.AddIns.AddInAdapter", "MK6.GameKeeper.AddIns.AddInAdapter\MK6.GameKeeper.AddIns.AddInAdapter.csproj", "{536B3244-3729-401F-8D02-A3DE4DB1ABDD}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MK6.GameKeeper.AddIns.HostView", "MK6.GameKeeper.AddIns.HostView\MK6.GameKeeper.AddIns.HostView.csproj", "{668E5A68-E06A-4A16-A079-6109BE49E819}"
@@ -17,7 +15,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MK6.GameKeeper.AddIns.HostA
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{09F7C729-2F6F-4C03-B641-ACFD84121EED}"
 	ProjectSection(SolutionItems) = preProject
-		MK6.GameKeeper.AddIns.nuspec = MK6.GameKeeper.AddIns.nuspec
 		MK6.GameKeeper.nuspec = MK6.GameKeeper.nuspec
 	EndProjectSection
 EndProject
@@ -35,10 +32,6 @@ Global
 		{D5E514A4-3B9C-4C2C-8953-56145ADEB6B7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D5E514A4-3B9C-4C2C-8953-56145ADEB6B7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D5E514A4-3B9C-4C2C-8953-56145ADEB6B7}.Release|Any CPU.Build.0 = Release|Any CPU
-		{FE692892-4849-4762-9FF5-BA356116A287}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{FE692892-4849-4762-9FF5-BA356116A287}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{FE692892-4849-4762-9FF5-BA356116A287}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{FE692892-4849-4762-9FF5-BA356116A287}.Release|Any CPU.Build.0 = Release|Any CPU
 		{536B3244-3729-401F-8D02-A3DE4DB1ABDD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{536B3244-3729-401F-8D02-A3DE4DB1ABDD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{536B3244-3729-401F-8D02-A3DE4DB1ABDD}.Release|Any CPU.ActiveCfg = Release|Any CPU

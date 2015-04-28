@@ -88,13 +88,22 @@
       <Name>MK6.GameKeeper.AddIns.HostView</Name>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup>
+    <AddInView Include="..\packages\MK6.GameKeeper.AddIns.*\lib\net451\*.dll" />
+  </ItemGroup>
+  <PropertyGroup>
+    <PipelineDirectory>$(OutputPath)\Pipeline\</PipelineDirectory>
+    <PipelineAddInViewsDirectory>$(PipelineDirectory)\AddInViews\</PipelineAddInViewsDirectory>
+  </PropertyGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(SlowCheetahTargets)" Condition="Exists('$(SlowCheetahTargets)')" Label="SlowCheetah" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">
   </Target>
-  <Target Name="AfterBuild">
-  </Target>
   -->
+  <Target Name="AfterBuild">
+    <MakeDir Directories="$(PipelineAddInViewsDirectory)" />
+    <Copy SourceFiles="@(AddInView)" DestinationFiles="@(AddInView->'$(PipelineAddInViewsDirectory)\%(Filename)%(Extension)')" />
+  </Target>
 </Project>

@@ -44,7 +44,6 @@ namespace MK6.GameKeeper
                         svc.AfterStoppingService(() => Log.Information("Service stopped"));
                     });
 
-                config.RunAsLocalService();
                 config.SetServiceName(ConfigurationManager.AppSettings["Name"] ?? DefaultServiceName);
                 config.SetDisplayName(ConfigurationManager.AppSettings["DisplayName"] ?? DefaultDisplayName);
                 config.SetDescription(ConfigurationManager.AppSettings["Description"] ?? DefaultDescription);

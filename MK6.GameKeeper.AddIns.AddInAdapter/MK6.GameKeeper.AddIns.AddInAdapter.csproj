@@ -31,9 +31,10 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="MK6.GameKeeper.AddIns, Version=1.0.22.0, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="MK6.GameKeeper.AddIns, Version=1.0.24.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\MK6.GameKeeper.AddIns.1.0.22\lib\net451\MK6.GameKeeper.AddIns.dll</HintPath>
+      <HintPath>..\packages\MK6.GameKeeper.AddIns.1.0.24\lib\net451\MK6.GameKeeper.AddIns.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.AddIn" />

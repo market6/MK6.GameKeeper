@@ -8,6 +8,7 @@ namespace MK6.GameKeeper
 {
     class AddIn : IDisposable
     {
+        public readonly string Id;
         public readonly string Name;
         public readonly Version Version;
 
@@ -22,6 +23,8 @@ namespace MK6.GameKeeper
 
             Name = token.Name;
             Version = new Version(token.Version);
+
+            Id = token.Name.Replace(" ", "_");
         }
 
         public AddInStatus Status
@@ -80,7 +83,7 @@ namespace MK6.GameKeeper
                 Log.Debug("Starting addin {@Name}", Name);
                 this.addin.Start();
                 Log.Debug("Addin {@Name} started", Name);
-                
+
             }
             catch (Exception ex)
             {

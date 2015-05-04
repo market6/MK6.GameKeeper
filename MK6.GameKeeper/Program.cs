@@ -32,9 +32,10 @@ namespace MK6.GameKeeper
                             pipelinePath = Path.Combine(Environment.CurrentDirectory, pipelinePath);
                         }
 
-                        var pluginsDirectory = new DirectoryInfo(pipelinePath);
+                        Uri restUri;
+                        Uri.TryCreate(ConfigurationManager.AppSettings["RestUri"], UriKind.Absolute, out restUri);
 
-                        return new Service(pluginsDirectory);
+                        return new Service(new DirectoryInfo(pipelinePath), restUri);
                     },
                     svc =>
                     {

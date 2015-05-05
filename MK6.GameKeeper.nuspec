@@ -2,9 +2,11 @@
 <package >
   <metadata>
     <id>MK6.GameKeeper</id>
+    <title>MK6.GameKeeper</title>
     <version>$version$</version>
     <authors>Market6</authors>
     <owners>Market6</owners>
+    <projectUrl>https://github.com/market6/MK6.GameKeeper</projectUrl>
     <requireLicenseAcceptance>true</requireLicenseAcceptance>
     <licenseUrl>http://opensource.org/licenses/MIT</licenseUrl>
     <description>Windows service to host pluggable services</description>

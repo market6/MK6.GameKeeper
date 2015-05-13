@@ -10,8 +10,12 @@ namespace MK6.GameKeeper
     {
         private readonly NancyHost nancyHost;
 
+        private readonly Uri RestURI;
+
         public Service(DirectoryInfo pipelineDirectory, Uri restUri)
         {
+            this.RestURI = restUri;
+
             AddInManager.Initialize(pipelineDirectory);
 
             if (restUri != null)
@@ -36,7 +40,7 @@ namespace MK6.GameKeeper
             if (nancyHost != null)
             {
                 nancyHost.Start();
-                Log.Information("Rest API started");
+                Log.Information("Rest API started on port {@RestAPIPort}", RestURI.Port);
             }
 
             return true;
